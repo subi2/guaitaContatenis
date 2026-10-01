@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Contador Tenis</title>
+    
+    <!-- Icona de la Web App -->
+    <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1Xl2wH6gQyS7P7a4hU2e_x3b3aO6gQyS7">
+    <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1Xl2wH6gQyS7P7a4hU2e_x3b3aO6gQyS7">
+    
+    <!-- Configuració de la Web App per a iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Contador Tenis">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            touch-action: manipulation; 
+            -webkit-tap-highlight-color: transparent; 
+            overscroll-behavior: none;
+            background-color: #030712;
+            color: white;
+            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+        }
+        .confirm-btn { animation: pulse 0.8s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            50% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        .app-container { height: 100dvh; display: flex; flex-direction: column; }
+        .hidden { display: none !important; }
+        input::placeholder { color: rgba(255, 255, 255, 0.3); }
+    </style>
+</head>
+<body>
+    <div id="app" class="app-container">
+        <div class="bg-slate-900 px-4 pb-4 pt-[calc(max(1rem,env(safe-area-inset-top))+0.5rem)] flex justify-between items-center border-b border-slate-800 z-10 shadow-md shrink-0">
+            <div class="flex items-center gap-3">
+                <span id="sport-label" class="bg-yellow-500 text-black px-3 py-1 rounded-lg font-black text-sm uppercase tracking-widest">TENNIS</span>
+                <span id="mode-label" class="text-sm font-bold opacity-80 uppercase tracking-wider">Set Clàssic</span>
+            </div>
+            <div class="flex gap-4 items-center">
+                <button onclick="undo()" class="bg-slate-700 px-5 py-2.5 rounded-full text-xs font-black tracking-widest active:bg-slate-600 shadow-inner">DESFER</button>
+                <button onclick="toggleSettings(true)" class="text-2xl px-2 opacity-80 active:opacity-100 transition-opacity">⚙️</button>
+            </div>
+        </div>
+
+        <div id="match-container" class="flex-1 flex overflow-hidden relative transition-all duration-300">
+            <div id="msg-alert" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-slate-900 text-white px-8 py-4 rounded-3xl font-black text-3xl shadow-2xl border-4 border-yellow-500 text-center w-[85%] max-w-sm">CANVI DE CAMP</div>
+            
+            <div id="p1-area" class="flex-1 flex flex-col items-center justify-between py-6 px-2 bg-[#dcedc1] text-slate-900 transition-colors" onclick="handleTap(1)">
+                <div id="p1-name-display" class="text-xl font-black opacity-60 uppercase tracking-widest text-center break-words w-full px-1">JUGADOR 1</div>
+                
+                <div class="flex flex-col items-center w-full mt-2">
+                    <div id="p1-history" class="flex gap-1.5 h-8 mb-2"></div>
+                    
+                    <div class="text-center mb-6">
+                        <div class="text-xs font-black opacity-50 tracking-widest uppercase mb-1">Jocs</div>
+                        <div id="p1-games" class="text-8xl font-black text-emerald-800 leading-none drop-shadow-sm">0</div>
+                    </div>
+
+                    <div id="p1-btn" class="w-44 h-44 rounded-[2.5rem] flex flex-col items-center justify-center transition-all shadow-xl bg-white text-slate-900 border-b-4 border-slate-200">
+                        <span id="p1-score" class="text-8xl font-black block leading-none">0</span>
+                        <span id="p1-deuce" class="text-sm font-black opacity-40 uppercase hidden tracking-widest mt-1">Iguals</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/10 px-6 py-3 rounded-2xl mb-[calc(max(1rem,env(safe-area-inset-bottom))+1rem)] flex items-center gap-3">
+                    <span class="text-sm font-black opacity-50 uppercase tracking-widest">Sets</span>
+                    <span id="p1-sets" class="text-3xl font-black text-emerald-900">0</span>
+                </div>
+            </div>
+
+            <div class="w-1 bg-slate-900/20 relative shadow-inner z-10 shrink-0">
+                <button onclick="toggleSwap()" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 text-white w-14 h-14 flex flex-col items-center justify-center rounded-full font-black shadow-2xl border-4 border-slate-800 active:scale-90 transition-transform z-20">
+                    <span class="text-[10px] opacity-60 leading-none mb-0.5 tracking-widest">VS</span>
+                    <span class="text-2xl leading-none">🔄</span>
+                </button>
+            </div>
+
+            <div id="p2-area" class="flex-1 flex flex-col items-center justify-between py-6 px-2 bg-[#a8e6cf] text-slate-900 transition-colors" onclick="handleTap(2)">
+                <div id="p2-name-display" class="text-xl font-black opacity-60 uppercase tracking-widest text-center break-words w-full px-1">JUGADOR 2</div>
+                
+                <div class="flex flex-col items-center w-full mt-2">
+                    <div id="p2-history" class="flex gap-1.5 h-8 mb-2"></div>
+                    
+                    <div class="text-center mb-6">
+                        <div class="text-xs font-black opacity-50 tracking-widest uppercase mb-1">Jocs</div>
+                        <div id="p2-games" class="text-8xl font-black text-teal-900 leading-none drop-shadow-sm">0</div>
+                    </div>
+
+                    <div id="p2-btn" class="w-44 h-44 rounded-[2.5rem] flex flex-col items-center justify-center transition-all shadow-xl bg-white text-slate-900 border-b-4 border-slate-200">
+                        <span id="p2-score" class="text-8xl font-black block leading-none">0</span>
+                        <span id="p2-deuce" class="text-sm font-black opacity-40 uppercase hidden tracking-widest mt-1">Iguals</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/10 px-6 py-3 rounded-2xl mb-[calc(max(1rem,env(safe-area-inset-bottom))+1rem)] flex items-center gap-3">
+                    <span class="text-sm font-black opacity-50 uppercase tracking-widest">Sets</span>
+                    <span id="p2-sets" class="text-3xl font-black text-teal-900">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="cancel-box" class="hidden absolute bottom-[calc(max(2rem,env(safe-area-inset-bottom)))] left-0 right-0 flex justify-center z-20">
+            <button onclick="cancelPending(event)" class="bg-slate-900 text-white px-8 py-5 rounded-full font-black shadow-2xl border-4 border-rose-500 text-sm tracking-widest flex items-center gap-2">
+                <span class="text-rose-500 text-xl">✖</span> CANCEL·LAR SELECCIÓ
+            </button>
+        </div>
+
+        <div id="settings-modal" class="hidden fixed inset-0 bg-slate-950 z-[100] px-6 pb-6 pt-[calc(max(1.5rem,env(safe-area-inset-top)))] flex flex-col text-white">
+            <div class="flex justify-between items-center mb-8 shrink-0">
+                <h2 class="text-3xl font-black tracking-widest">CONFIGURACIÓ</h2>
+                <button onclick="toggleSettings(false)" class="text-5xl text-slate-500 active:text-white">&times;</button>
+            </div>
+            <div class="space-y-8 overflow-y-auto pb-10">
+                <section>
+                    <label class="block text-xs font-black opacity-50 mb-3 uppercase tracking-widest">Noms dels Jugadors</label>
+                    <div class="space-y-3">
+                        <input type="text" id="input-name1" oninput="updateName(1, this.value)" placeholder="Nom Jugador 1" class="w-full bg-slate-900 border-2 border-slate-800 rounded-2xl px-4 py-4 font-black text-base outline-none focus:border-[#dcedc1] focus:text-[#dcedc1] transition-colors">
+                        <input type="text" id="input-name2" oninput="updateName(2, this.value)" placeholder="Nom Jugador 2" class="w-full bg-slate-900 border-2 border-slate-800 rounded-2xl px-4 py-4 font-black text-base outline-none focus:border-[#a8e6cf] focus:text-[#a8e6cf] transition-colors">
+                    </div>
+                </section>
+
+                <section>
+                    <label class="block text-xs font-black opacity-50 mb-3 uppercase tracking-widest">Esport</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="updateSettings('sport', 'tennis')" id="opt-tennis" class="py-4 rounded-2xl border-2 font-black text-base tracking-widest">TENNIS</button>
+                        <button onclick="updateSettings('sport', 'padel')" id="opt-padel" class="py-4 rounded-2xl border-2 font-black text-base tracking-widest">PÀDEL</button>
+                    </div>
+                </section>
+                
+                <section>
+                    <label class="block text-xs font-black opacity-50 mb-3 uppercase tracking-widest">Sistema de Punts</label>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <button onclick="updateSettings('mode', 'set')" id="opt-set" class="py-4 rounded-2xl border-2 font-black text-sm uppercase tracking-widest">Classic Set</button>
+                        <button onclick="updateSettings('mode', '7')" id="opt-7" class="py-4 rounded-2xl border-2 font-black text-sm uppercase tracking-widest">7 Pts (Tie)</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="updateSettings('mode', '11')" id="opt-11" class="py-4 rounded-2xl border-2 font-black text-sm uppercase tracking-widest">11 Pts</button>
+                        <button onclick="updateSettings('mode', '21')" id="opt-21" class="py-4 rounded-2xl border-2 font-black text-sm uppercase tracking-widest">21 Pts</button>
+                    </div>
+                </section>
+
+                <section id="golden-section" class="flex items-center justify-between bg-slate-900 p-5 rounded-2xl border border-slate-800">
+                    <div>
+                        <div class="text-base font-black uppercase tracking-widest text-yellow-500">Punt d'Or</div>
+                        <div class="text-xs opacity-50 font-bold uppercase mt-1">Sense avantatges (Pàdel)</div>
+                    </div>
+                    <button onclick="toggleGolden()" id="golden-toggle" class="w-14 h-8 rounded-full relative bg-slate-700 transition-colors shadow-inner border border-slate-600">
+                        <div id="golden-dot" class="absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-all shadow-md"></div>
+                    </button>
+                </section>
+                
+                <button id="reset-btn" onclick="secureReset()" class="w-full py-5 bg-rose-900/30 text-rose-500 border-2 border-rose-900 rounded-2xl font-black text-base uppercase tracking-widest transition-colors mt-4">Reiniciar Partida</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let settings = JSON.parse(localStorage.getItem('v6_settings')) || { 
+            sport: 'tennis', 
+            mode: 'set', 
+            goldenPoint: false,
+            name1: 'JUGADOR 1',
+            name2: 'JUGADOR 2',
+            isSwapped: false
+        };
+        let game = JSON.parse(localStorage.getItem('v6_game')) || { score1: 0, score2: 0, sets1: 0, sets2: 0, games1: 0, games2: 0, isDeuce: false, adv: 0, setHistory: [] };
+        let history = [];
+        let pending = null;
+        let resetStep = 0;
+
+        const speak = (text) => {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ca-ES';
+                utterance.rate = 1.1;
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utterance);
+            }
+        };
+
+        const render = () => {
+            localStorage.setItem('v6_settings', JSON.stringify(settings));
+            localStorage.setItem('v6_game', JSON.stringify(game));
+
+            document.getElementById('sport-label').innerText = settings.sport.toUpperCase();
+            let modeText = settings.mode === 'set' ? 'Set Clàssic' : (settings.mode + ' Pts');
+            document.getElementById('mode-label').innerText = modeText;
+            
+            document.getElementById('p1-name-display').innerText = settings.name1 || 'JUGADOR 1';
+            document.getElementById('p2-name-display').innerText = settings.name2 || 'JUGADOR 2';
+            
+            if (document.getElementById('input-name1').value !== settings.name1) document.getElementById('input-name1').value = settings.name1;
+            if (document.getElementById('input-name2').value !== settings.name2) document.getElementById('input-name2').value = settings.name2;
+
+            for (let i = 1; i <= 2; i++) {
+                const isPending = pending === i;
+                const scoreVal = game['score' + i];
+                const btn = document.getElementById(`p${i}-btn`);
+                const scoreSpan = document.getElementById(`p${i}-score`);
+                const deuceSpan = document.getElementById(`p${i}-deuce`);
+
+                if (isPending) {
+                    btn.className = "w-44 h-44 rounded-[2.5rem] flex flex-col items-center justify-center transition-all shadow-2xl bg-green-500 confirm-btn ring-8 ring-green-300/50 text-white border-0 z-10";
+                    scoreSpan.innerHTML = '<span class="text-3xl font-black block leading-tight tracking-widest">CONFIRMA</span><span class="text-base font-bold opacity-90 mt-2">+1 PUNT</span>';
+                    deuceSpan.classList.add('hidden');
+                } else {
+                    btn.className = "w-44 h-44 rounded-[2.5rem] flex flex-col items-center justify-center transition-all shadow-xl bg-white text-slate-900 border-b-4 border-slate-300 active:scale-95 active:border-b-0 active:translate-y-1";
+                    let displayScore = scoreVal;
+                    if (settings.mode === 'set') {
+                        const map = { 0: "0", 1: "15", 2: "30", 3: "40" };
+                        displayScore = map[scoreVal] || scoreVal;
+                        if (game.adv === i) displayScore = "AD";
+                    }
+                    scoreSpan.innerText = displayScore;
+                    scoreSpan.className = "text-8xl font-black block leading-none tracking-tighter";
+                    
+                    if (game.isDeuce && game.adv !== i) deuceSpan.classList.remove('hidden');
+                    else deuceSpan.classList.add('hidden');
+                }
+
+                document.getElementById(`p${i}-games`).innerText = game['games' + i];
+                document.getElementById(`p${i}-sets`).innerText = game['sets' + i];
+                
+                const histDiv = document.getElementById(`p${i}-history`);
+                histDiv.innerHTML = game.setHistory.map(s => `<span class="text-sm font-bold opacity-60 bg-slate-900/10 px-2 py-1 rounded-md tracking-widest flex items-center">${s.split('-')[i-1]}</span>`).join('');
+            }
+
+            document.getElementById('cancel-box').className = pending ? 'absolute bottom-[calc(max(2rem,env(safe-area-inset-bottom)))] left-0 right-0 flex justify-center z-20' : 'hidden';
+
+            ['tennis', 'padel'].forEach(s => {
+                document.getElementById('opt-'+s).className = `py-4 rounded-2xl border-2 font-black text-base tracking-widest ${settings.sport === s ? 'border-yellow-500 bg-yellow-500 text-black' : 'border-slate-800 bg-slate-900 text-slate-400'}`;
+            });
+            ['set', '7', '11', '21'].forEach(m => {
+                document.getElementById('opt-'+m).className = `py-4 rounded-2xl border-2 font-black text-sm uppercase tracking-widest ${settings.mode === m ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-800 bg-slate-900 text-slate-400'}`;
+            });
+            
+            document.getElementById('golden-toggle').className = `w-14 h-8 rounded-full relative transition-colors shadow-inner border border-slate-600 ${settings.goldenPoint ? 'bg-green-500 border-green-400' : 'bg-slate-700'}`;
+            document.getElementById('golden-dot').className = `absolute top-1 w-5 h-5 bg-white rounded-full transition-all shadow-md ${settings.goldenPoint ? 'right-1' : 'left-1'}`;
+            document.getElementById('golden-section').className = settings.mode === 'set' ? 'flex items-center justify-between bg-slate-900 p-5 rounded-2xl border border-slate-800' : 'hidden';
+
+            const matchContainer = document.getElementById('match-container');
+            if (settings.isSwapped) {
+                matchContainer.classList.add('flex-row-reverse');
+            } else {
+                matchContainer.classList.remove('flex-row-reverse');
+            }
+        };
+
+        const handleTap = (id) => {
+            if (pending === id) addPoint(id);
+            else pending = id;
+            render();
+        };
+
+        const cancelPending = (e) => {
+            e.stopPropagation();
+            pending = null;
+            render();
+        };
+
+        const updateName = (id, val) => {
+            settings['name' + id] = val;
+            render();
+        };
+
+        const addPoint = (player) => {
+            history.unshift(JSON.stringify(game));
+            if (history.length > 20) history.pop();
+
+            const other = player === 1 ? 2 : 1;
+            const playerName = settings['name' + player];
+
+            if (settings.mode === 'set') {
+                if (game.isDeuce) {
+                    if (game.adv === player) winGame(player);
+                    else if (game.adv === other) { game.adv = 0; speak("Iguals"); }
+                    else { game.adv = player; speak(`Avantatge ${playerName}`); }
+                } else {
+                    if (game['score' + player] === 3) {
+                        if (game['score' + other] === 3) {
+                            if (settings.goldenPoint) winGame(player);
+                            else { game.isDeuce = true; speak("Iguals"); }
+                        } else winGame(player);
+                    } else {
+                        game['score' + player]++;
+                        if (game.score1 === 3 && game.score2 === 3) {
+                            if (settings.goldenPoint) speak("Punt d'or");
+                            else { game.isDeuce = true; speak("Iguals"); }
+                        } else {
+                            const map = { 0: "zero", 1: "quinze", 2: "trenta", 3: "quaranta" };
+                            speak(`${map[game.score1]} a ${map[game.score2]}`);
+                        }
+                    }
+                }
+            } else {
+                const limit = parseInt(settings.mode);
+                game['score' + player]++;
+                if (game['score' + player] >= limit && (game['score' + player] - game['score' + other] >= 2)) {
+                    winGame(player);
+                } else {
+                    speak(`${game.score1} a ${game.score2}`);
+                }
+            }
+            pending = null;
+            render();
+        };
+
+        const winGame = (p) => {
+            const other = p === 1 ? 2 : 1;
+            const winnerName = settings['name' + p];
+            
+            game['games' + p]++;
+            game.score1 = 0; game.score2 = 0; game.isDeuce = false; game.adv = 0;
+            
+            let announce = `Joc per a ${winnerName}. `;
+            let wonSet = false;
+
+            if (settings.mode === 'set') {
+                if ((game['games' + p] >= 6 && game['games' + p] - game['games' + other] >= 2) || game['games' + p] === 7) {
+                    wonSet = true;
+                }
+            } else {
+                wonSet = true;
+                announce = "";
+            }
+
+            if (wonSet) {
+                game.setHistory.push(`${game.games1}-${game.games2}`);
+                game['sets' + p]++;
+                game.games1 = 0; game.games2 = 0;
+                announce += ` Set per a ${winnerName}.`;
+            } else {
+                if ((game.games1 + game.games2) % 2 !== 0) {
+                    announce += "Canvi de camp.";
+                    const alertBox = document.getElementById('msg-alert');
+                    alertBox.classList.remove('hidden');
+                    setTimeout(() => alertBox.classList.add('hidden'), 3500);
+                }
+            }
+            speak(announce);
+        };
+
+        const undo = () => {
+            if (history.length > 0) {
+                game = JSON.parse(history.shift());
+                pending = null;
+                render();
+                speak("Desfet");
+            }
+        };
+
+        const toggleSettings = (show) => {
+            document.getElementById('settings-modal').className = show ? 'fixed inset-0 bg-slate-950 z-[100] px-6 pb-6 pt-[calc(max(1.5rem,env(safe-area-inset-top)))] flex flex-col text-white' : 'hidden';
+            if (!show) {
+                resetStep = 0;
+                document.getElementById('reset-btn').innerText = "REINICIAR PARTIDA";
+                document.getElementById('reset-btn').className = "w-full py-5 bg-rose-900/30 text-rose-500 border-2 border-rose-900 rounded-2xl font-black text-base uppercase tracking-widest transition-colors mt-4";
+            }
+        };
+
+        const updateSettings = (key, val) => {
+            settings[key] = val;
+            render();
+        };
+
+        const toggleSwap = () => {
+            settings.isSwapped = !settings.isSwapped;
+            render();
+            speak("Canvi de costat");
+        };
+
+        const toggleGolden = () => {
+            settings.goldenPoint = !settings.goldenPoint;
+            render();
+        };
+
+        const secureReset = () => {
+            const btn = document.getElementById('reset-btn');
+            if (resetStep === 0) {
+                resetStep = 1;
+                btn.innerText = "SEGUR? POLSA PER CONFIRMAR";
+                btn.className = "w-full py-5 bg-rose-600 text-white border-2 border-rose-500 rounded-2xl font-black text-base uppercase tracking-widest transition-all mt-4 animate-pulse shadow-[0_0_20px_rgba(225,29,72,0.5)]";
+                
+                setTimeout(() => {
+                    if (resetStep === 1) {
+                        resetStep = 0;
+                        btn.innerText = "REINICIAR PARTIDA";
+                        btn.className = "w-full py-5 bg-rose-900/30 text-rose-500 border-2 border-rose-900 rounded-2xl font-black text-base uppercase tracking-widest transition-colors mt-4";
+                    }
+                }, 4000);
+            } else {
+                game = { score1: 0, score2: 0, sets1: 0, sets2: 0, games1: 0, games2: 0, isDeuce: false, adv: 0, setHistory: [] };
+                history = [];
+                toggleSettings(false);
+                render();
+                speak("Partida reiniciada");
+            }
+        };
+
+        render();
+    </script>
+</body>
+</html>
